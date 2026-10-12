@@ -13,7 +13,7 @@ proto2prod's promise is **verified** production readiness: nothing ships until i
 ## 2. Goals and non-goals
 
 **Goals (MVP)**
-- Input: a GitHub repo containing a Next.js app backed by Postgres.
+- Input: **any** containerizable web app in a GitHub repo. The first deep-refactor adapter is Next.js + Postgres; everything else uses the generic adapter (see §2a).
 - Output: one pull request containing app refactors, Terraform, CI/CD, an architecture summary and a monthly cost estimate.
 - Target architecture: ECS Fargate + RDS Postgres + ALB + CloudFront + Secrets Manager, in the user's own AWS account.
 - Every change reviewed by agents that did not write it, then proven with a throwaway deploy.
@@ -22,6 +22,21 @@ proto2prod's promise is **verified** production readiness: nothing ships until i
 - Other clouds (GCP, Azure), Kubernetes, multi-region.
 - Applying changes to production automatically.
 - Operating the AWS console through a browser (see §7).
+
+## 2a. Stack adapters
+
+Most of the pipeline does not care what language the app is written in: once the app runs in a container, Terraform, CI/CD, cost, review and test deploy are the same. Only two things are stack-specific: **detecting** the stack and **refactoring** it. Those live in adapters.
+
+| Part | Stack-specific? |
+|---|---|
+| Architecture, Terraform, CI/CD, reviewers, test deploy | No – works on the container |
+| Detection, build commands, Dockerfile, refactor rules | Yes – one adapter per stack |
+
+Each adapter implements: `detect(repo) -> confidence`, `profile(repo)`, `dockerfile(profile)`, `refactor_rules()`.
+
+- **`nextjs`** (MVP): full detection, Dockerfile, and deep refactor.
+- **`generic`** (MVP fallback): any app with a Dockerfile, or one the agent can write. Full infra, CI/CD and review; no deep refactor. The pull request states which refactor checks were skipped.
+- Next adapters: FastAPI/Django, Express, Rails, Spring Boot.
 
 ## 3. Pipeline overview
 

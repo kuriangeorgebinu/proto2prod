@@ -24,6 +24,14 @@ crash.log
 # Agent run output
 runs/
 
+# Sample app local artifacts
+examples/**/node_modules/
+examples/**/.next/
+examples/**/next-env.d.ts
+examples/**/*.log
+examples/**/*.done
+examples/**/tsconfig.tsbuildinfo
+
 # OS / editors
 .DS_Store
 Thumbs.db

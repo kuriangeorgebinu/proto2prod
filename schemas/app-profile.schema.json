@@ -4,36 +4,99 @@
   "title": "proto2prod app profile",
   "description": "Facts the analyzer found about the app, plus the user's traffic tier and budget.",
   "type": "object",
-  "required": ["version", "framework", "runtime", "build", "services", "database", "traffic_tier", "monthly_budget_usd"],
+  "required": [
+    "version",
+    "adapter",
+    "framework",
+    "runtime",
+    "build",
+    "services",
+    "database",
+    "traffic_tier",
+    "monthly_budget_usd"
+  ],
   "additionalProperties": false,
   "properties": {
-    "version": { "const": 1 },
+    "version": {
+      "const": 1
+    },
+    "adapter": {
+      "description": "Stack adapter that handles detection, build and refactor. 'generic' = any containerizable app: full infra, CI/CD and review, but no deep refactor.",
+      "enum": [
+        "nextjs",
+        "generic"
+      ]
+    },
     "framework": {
       "type": "object",
-      "required": ["name", "version"],
+      "required": [
+        "name"
+      ],
       "properties": {
-        "name": { "enum": ["nextjs"] },
-        "version": { "type": "string" },
-        "router": { "enum": ["app", "pages"] }
+        "name": {
+          "type": "string",
+          "description": "e.g. nextjs, fastapi, django, express, rails, unknown"
+        },
+        "version": {
+          "type": "string"
+        },
+        "router": {
+          "enum": [
+            "app",
+            "pages"
+          ]
+        }
       }
     },
     "runtime": {
       "type": "object",
-      "required": ["language", "package_manager"],
+      "required": [
+        "language"
+      ],
       "properties": {
-        "language": { "enum": ["typescript", "javascript"] },
-        "node_version": { "type": "string" },
-        "package_manager": { "enum": ["npm", "pnpm", "yarn", "bun"] }
+        "language": {
+          "type": "string",
+          "description": "e.g. typescript, javascript, python, ruby, java, go"
+        },
+        "version": {
+          "type": "string"
+        },
+        "package_manager": {
+          "type": "string"
+        }
+      }
+    },
+    "container": {
+      "type": "object",
+      "properties": {
+        "dockerfile": {
+          "type": "string",
+          "description": "Path to an existing Dockerfile, if any"
+        },
+        "generated": {
+          "type": "boolean",
+          "description": "True if proto2prod must write the Dockerfile"
+        }
       }
     },
     "build": {
       "type": "object",
-      "required": ["install", "build", "start"],
+      "required": [
+        "start"
+      ],
       "properties": {
-        "install": { "type": "string" },
-        "build": { "type": "string" },
-        "start": { "type": "string" },
-        "test": { "type": "string" }
+        "install": {
+          "type": "string"
+        },
+        "build": {
+          "type": "string"
+        },
+        "start": {
+          "type": "string"
+        },
+        "test": {
+          "type": "string"
+        }
       }
     },
     "services": {
@@ -41,50 +104,118 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["name", "kind"],
+        "required": [
+          "name",
+          "kind"
+        ],
         "properties": {
-          "name": { "type": "string" },
-          "kind": { "enum": ["web", "worker", "cron"] },
-          "schedule": { "type": "string" }
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "web",
+              "worker",
+              "cron"
+            ]
+          },
+          "schedule": {
+            "type": "string"
+          }
         }
       }
     },
     "database": {
       "type": "object",
-      "required": ["engine"],
+      "required": [
+        "engine"
+      ],
       "properties": {
-        "engine": { "enum": ["postgres", "none"] },
-        "version": { "type": "string" },
-        "orm": { "enum": ["prisma", "drizzle", "supabase-js", "pg", "none"] },
-        "migrations": { "enum": ["prisma-migrate", "drizzle-kit", "supabase", "none"] },
-        "row_level_security": { "enum": ["enabled", "disabled", "unknown", "not-applicable"] }
+        "engine": {
+          "enum": [
+            "postgres",
+            "mysql",
+            "none"
+          ]
+        },
+        "version": {
+          "type": "string"
+        },
+        "orm": {
+          "type": "string",
+          "description": "e.g. prisma, drizzle, sqlalchemy, django-orm, activerecord, none"
+        },
+        "migrations": {
+          "type": "string",
+          "description": "e.g. prisma-migrate, alembic, django, none"
+        },
+        "row_level_security": {
+          "enum": [
+            "enabled",
+            "disabled",
+            "unknown",
+            "not-applicable"
+          ]
+        }
       }
     },
     "external_services": {
       "type": "array",
-      "items": { "type": "string" }
+      "items": {
+        "type": "string"
+      }
     },
     "findings": {
       "type": "array",
       "description": "Production-readiness issues the analyzer spotted, for the refactor agent and the user.",
       "items": {
         "type": "object",
-        "required": ["id", "severity", "summary"],
+        "required": [
+          "id",
+          "severity",
+          "summary"
+        ],
         "properties": {
-          "id": { "type": "string" },
-          "severity": { "enum": ["critical", "high", "medium", "low"] },
-          "summary": { "type": "string" },
-          "file": { "type": "string" },
-          "line": { "type": "integer" }
+          "id": {
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "critical",
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "file": {
+            "type": "string"
+          },
+          "line": {
+            "type": "integer"
+          }
         }
       }
     },
     "uncertain": {
       "type": "array",
       "description": "Things the analyzer could not determine and will not guess.",
-      "items": { "type": "string" }
+      "items": {
+        "type": "string"
+      }
     },
-    "traffic_tier": { "enum": ["starter", "standard", "growth"] },
-    "monthly_budget_usd": { "type": "number", "minimum": 0 }
+    "traffic_tier": {
+      "enum": [
+        "starter",
+        "standard",
+        "growth"
+      ]
+    },
+    "monthly_budget_usd": {
+      "type": "number",
+      "minimum": 0
+    }
   }
 }

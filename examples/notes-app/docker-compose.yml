@@ -1,0 +1,9 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: SuperSecret123
+      POSTGRES_DB: notes
+    ports:
+      - "5432:5432"

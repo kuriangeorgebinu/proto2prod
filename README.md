@@ -24,4 +24,4 @@ See [docs/DESIGN.md](docs/DESIGN.md) for the full design.
 
 ## Status
 
-Early development. MVP target: Next.js + Postgres apps deployed to ECS Fargate + RDS.
+Early development. Works with any containerizable web app; the first deep-refactor adapter is Next.js + Postgres. Target platform: ECS Fargate + RDS on AWS. A sample prototype app for end-to-end testing lives in [examples/notes-app](examples/notes-app).

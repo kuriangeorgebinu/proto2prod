@@ -31,3 +31,4 @@ findings:
 uncertain: []
 traffic_tier: standard
 monthly_budget_usd: 200
+adapter: nextjs
