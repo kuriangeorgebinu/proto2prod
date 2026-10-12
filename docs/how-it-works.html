@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>proto2prod – How it works</title>
+<style>
+:root{
+  --bg:#f7f6f2;--card:#ffffff;--ink:#1d1c1a;--muted:#5f5e5a;--line:#dedcd3;
+  --accent:#0f6e56;--accent-bg:#e1f5ee;--warn:#854f0b;--warn-bg:#faeeda;
+  --purple:#534ab7;--purple-bg:#eeedfe;--coral:#993c1d;--coral-bg:#faece7;
+  --code-bg:#f1efe8;--mono:ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#161614;--card:#201f1d;--ink:#ecebe6;--muted:#a8a69e;--line:#38372f;
+  --accent:#5dcaa5;--accent-bg:#0b3a2e;--warn:#fac775;--warn-bg:#3a2a0c;
+  --purple:#afa9ec;--purple-bg:#2a2650;--coral:#f0997b;--coral-bg:#3d1d12;--code-bg:#2a2925;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:880px;margin:0 auto;padding:48px 20px 80px}
+h1{font-size:34px;line-height:1.2;margin:0 0 8px;letter-spacing:-.01em}
+h2{font-size:22px;margin:56px 0 12px}
+h3{font-size:17px;margin:0 0 6px}
+p{margin:0 0 12px}
+.lede{font-size:19px;color:var(--muted);max-width:680px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.io{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:stretch;margin-top:28px}
+.arrow{align-self:center;font-size:28px;color:var(--muted)}
+.io ul{margin:8px 0 0;padding-left:18px}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px}
+.tag.human{background:var(--warn-bg);color:var(--warn)}
+.tag.agent{background:var(--purple-bg);color:var(--purple)}
+.tag.ci{background:var(--accent-bg);color:var(--accent)}
+.steps{list-style:none;margin:20px 0 0;padding:0;counter-reset:s}
+.steps li{position:relative;padding:0 0 22px 52px;counter-increment:s}
+.steps li::before{content:counter(s);position:absolute;left:0;top:0;width:34px;height:34px;border-radius:50%;
+  background:var(--card);border:1px solid var(--line);display:grid;place-items:center;font-weight:600;font-size:15px}
+.steps li::after{content:"";position:absolute;left:17px;top:38px;bottom:4px;width:1px;background:var(--line)}
+.steps li:last-child::after{display:none}
+.steps p{color:var(--muted);margin:4px 0 0}
+.workers{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.workers div{background:var(--purple-bg);color:var(--purple);border-radius:8px;padding:8px;font-size:13px;text-align:center;font-weight:600}
+pre{background:var(--code-bg);border-radius:10px;padding:14px 16px;overflow-x:auto;font:13px/1.55 var(--mono);margin:12px 0}
+code{font-family:var(--mono);font-size:.9em;background:var(--code-bg);padding:1px 5px;border-radius:4px}
+pre code{background:none;padding:0}
+</style>
+</head>
+<body>
+<main>
+<style>
+.flow{display:flex;align-items:stretch;gap:0;margin:16px 0 16px;flex-wrap:wrap}
+.grid2 pre{margin:0}
+.flow .node{flex:1;min-width:130px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:14px}
+.flow .node b{display:block;font-size:14px}
+.flow .node span{color:var(--muted);font-size:13px}
+.flow .sep{align-self:center;padding:0 6px;color:var(--muted)}
+.flow .node.aws{border-color:var(--coral);background:var(--coral-bg)}
+.arch{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.arch div{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:12px;font-size:14px}
+.arch div span{display:block;color:var(--muted);font-size:13px}
+.arch .side{grid-column:span 4;display:flex;gap:10px;flex-wrap:wrap;border:1px dashed var(--line);background:transparent}
+.arch .side span{display:inline;background:var(--code-bg);color:var(--ink);padding:3px 8px;border-radius:6px}
+.checks{list-style:none;padding:0;margin:12px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.checks li{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:15px}
+.checks li b{display:block}
+.checks li span{color:var(--muted);font-size:14px}
+footer{margin-top:56px;color:var(--muted);font-size:14px;border-top:1px solid var(--line);padding-top:16px}
+@media (max-width:680px){
+  .io{grid-template-columns:1fr}.arrow{transform:rotate(90deg);justify-self:center}
+  .grid2,.checks{grid-template-columns:1fr}
+  .workers,.arch{grid-template-columns:1fr 1fr}.arch .side{grid-column:span 2}
+  .flow{flex-direction:column}.flow .sep{transform:rotate(90deg);align-self:center}
+}
+</style>
+
+<div class="eyebrow">proto2prod</div>
+<h1>From prototype to production on AWS, verified</h1>
+<p class="lede">Point proto2prod at your app's source code. A team of AI agents turns it into a production-ready app with Terraform, a CI/CD pipeline and secure OIDC access to your AWS account, delivered as one pull or merge request.</p>
+
+<div class="io">
+  <div class="card">
+    <h3>You bring</h3>
+    <ul>
+      <li>An app's source code on GitHub or GitLab</li>
+      <li>An AWS account</li>
+      <li>Expected traffic and a monthly budget</li>
+    </ul>
+  </div>
+  <div class="arrow" aria-hidden="true">→</div>
+  <div class="card">
+    <h3>You get, in one pull/merge request</h3>
+    <ul>
+      <li>App fixed for security and scale</li>
+      <li>Dockerfile and Terraform for the whole stack</li>
+      <li>CI/CD pipeline that deploys via OIDC</li>
+      <li>Architecture summary and monthly cost</li>
+      <li>Review results and a passing test deploy</li>
+    </ul>
+  </div>
+</div>
+
+<h2>The journey, step by step</h2>
+<p>You do three things: connect the repo, click once in AWS, and approve the result. Agents do everything else, and different agents check it before you see it.</p>
+<ol class="steps">
+  <li><h3>Connect your repo <span class="tag human">You</span></h3>
+    <p>Link the GitHub or GitLab project, pick a traffic tier and budget. proto2prod only gets read access plus the right to open a pull/merge request.</p></li>
+  <li><h3>Create the AWS trust in one click <span class="tag human">You</span></h3>
+    <p>You open a "Launch stack" link while signed in to AWS and press Create. The CloudFormation stack sets up the OIDC trust, a scoped deploy role and Terraform state storage. No passwords or keys are shared.</p></li>
+  <li><h3>Analyze <span class="tag agent">Agent</span></h3>
+    <p>The analyzer detects the stack, finds production problems (hard-coded secrets, missing auth checks, in-memory sessions…) and writes a shared contract: the exact names every other agent must use.</p></li>
+  <li><h3>Build in parallel <span class="tag agent">Agents</span></h3>
+    <p>Four workers run at the same time, each on its own branch, all following the contract.</p>
+    <div class="workers"><div>Refactor</div><div>Architecture &amp; cost</div><div>Terraform</div><div>CI/CD</div></div></li>
+  <li><h3>Review and rework <span class="tag agent">Agents</span></h3>
+    <p>Independent reviewers check security, cost, code and policy. Problems go back to the worker that made them, for up to three rounds.</p></li>
+  <li><h3>Prove it works <span class="tag agent">Agent</span></h3>
+    <p>The result is deployed to a throwaway environment, smoke-tested, and torn down. Logs and results are attached as evidence.</p></li>
+  <li><h3>Approve and ship <span class="tag human">You</span> <span class="tag ci">CI/CD</span></h3>
+    <p>You review one pull/merge request. Once merged, your pipeline deploys to staging automatically; production waits for your approval.</p></li>
+</ol>
+
+<h2>How your pipeline reaches AWS without keys (OIDC)</h2>
+<p>Your CI/CD never stores AWS access keys. On each run, it proves who it is with a short-lived signed token and AWS hands back temporary credentials that expire within an hour.</p>
+<div class="flow" role="img" aria-label="CI job gets an ID token from GitHub or GitLab, AWS STS checks it against the trust policy, and returns temporary credentials used to deploy">
+  <div class="node"><b>CI job starts</b><span>on your branch</span></div>
+  <div class="sep">→</div>
+  <div class="node"><b>GitHub / GitLab</b><span>issues a signed ID token</span></div>
+  <div class="sep">→</div>
+  <div class="node aws"><b>AWS STS</b><span>checks the trust policy</span></div>
+  <div class="sep">→</div>
+  <div class="node aws"><b>Temporary credentials</b><span>deploy role, ≤ 1 hour</span></div>
+  <div class="sep">→</div>
+  <div class="node"><b>Terraform + deploy</b><span>run with those credentials</span></div>
+</div>
+<p>The trust only accepts tokens from <em>your</em> project and branch. For GitLab it looks like this (GitHub uses <code>repo:owner/repo:ref:refs/heads/main</code> instead):</p>
+<pre><code>"Condition": {
+  "StringEquals": { "gitlab.com:aud": "https://gitlab.com" },
+  "StringLike":   { "gitlab.com:sub": "project_path:acme/notes-app:ref_type:branch:ref:main" }
+}</code></pre>
+<p>Self-managed GitLab works the same way with your GitLab URL, as long as AWS can reach it over the internet.</p>
+
+<h2>What lands in the pull/merge request</h2>
+<div class="grid2">
+<pre><code>Dockerfile
+infra/
+  main.tf  variables.tf  outputs.tf
+  envs/staging.tfvars  envs/production.tfvars
+.gitlab-ci.yml   <span style="color:var(--muted)"># or .github/workflows/deploy.yml</span>
+src/…            <span style="color:var(--muted)"># security + scale fixes</span>
+prisma/migrations/
+docs/ARCHITECTURE.md</code></pre>
+<div class="card">
+  <h3>The pipeline it sets up</h3>
+  <p style="color:var(--muted);margin:0">On every pull/merge request: build, test, scan dependencies, the container and Terraform, then show the <code>terraform plan</code>.</p>
+  <p style="color:var(--muted);margin:10px 0 0">On merge to <code>main</code>: deploy to staging automatically, run migrations once, smoke-test.</p>
+  <p style="color:var(--muted);margin:10px 0 0">Production: same artifact, released only after a human approves.</p>
+</div>
+</div>
+
+<h2>What gets deployed (standard tier)</h2>
+<p>Sized to your traffic and budget; smaller apps get a cheaper shape, busier apps get more redundancy.</p>
+<div class="arch">
+  <div><b>CloudFront</b><span>CDN + HTTPS</span></div>
+  <div><b>Load balancer</b><span>health-checked</span></div>
+  <div><b>ECS Fargate</b><span>2+ containers, autoscaling</span></div>
+  <div><b>RDS Postgres</b><span>encrypted, backed up</span></div>
+  <div class="side"><b style="font-size:14px">Supporting:</b> <span>Secrets Manager</span><span>ECR image registry</span><span>CloudWatch logs + alarms</span><span>Private VPC subnets</span><span>Terraform state in S3</span></div>
+</div>
+
+<h2>Guarantees</h2>
+<ul class="checks">
+  <li><b>No AWS console automation</b><span>Every AWS change is Terraform you can read.</span></li>
+  <li><b>No long-lived keys</b><span>CI uses OIDC; nothing permanent to leak.</span></li>
+  <li><b>Never touches production alone</b><span>Production deploys always need your approval.</span></li>
+  <li><b>Checked by someone else</b><span>Reviewers never grade their own work.</span></li>
+  <li><b>Proven before you see it</b><span>A real throwaway deploy must pass first.</span></li>
+  <li><b>Any app</b><span>Deep fixes for supported stacks; infra and CI/CD for any containerizable app.</span></li>
+</ul>
+
+<footer>proto2prod · How it works · See also <a href="development-plan.html" style="color:var(--accent)">Development plan</a> and <a href="DESIGN.md" style="color:var(--accent)">full design</a>.</footer>
+</main>
+</body>
+</html>

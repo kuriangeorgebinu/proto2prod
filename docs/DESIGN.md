@@ -95,7 +95,7 @@ Schemas live in `schemas/` and are validated by every agent and reviewer.
 | **Refactor** | repo, contract | code changes | Secrets → env vars; health endpoint; stateless sessions; DB pooling; migrations; structured logs; server-side auth checks; enable row-level security. Must keep existing tests passing. |
 | **Architecture** | profile | `architecture.md`, decision record, cost estimate | Picks the cheapest tier that meets the traffic tier. Explains every choice in plain English. |
 | **Terraform** | decision record, contract | `infra/` | Composes **only** modules from `modules/` (tested library); no free-form resources except variables/wiring. Pinned provider versions. Remote state in S3 with locking. |
-| **CI/CD** | profile, contract | `.github/workflows/` | Build → test → scan (deps, container, IaC) → `terraform plan` on PR → deploy staging on merge → manual gate for production. Uses GitHub OIDC; no long-lived keys. |
+| **CI/CD** | profile, contract | `.github/workflows/` **or** `.gitlab-ci.yml` | Build → test → scan (deps, container, IaC) → `terraform plan` on PR/MR → deploy staging on merge → manual gate for production. Authenticates to AWS with OIDC (GitHub or GitLab); no long-lived keys. |
 | **Integrator** | worker branches | merged branch | Resolves conflicts using the contract as the source of truth. |
 
 ### Architecture tiers (MVP)
@@ -126,13 +126,22 @@ Reviewers never see the worker's reasoning, only its output, so the work is not 
 **No browser automation of the AWS console.** Customers will not hand an AI their console login, console clicks leave no reviewable record, and console layouts change often.
 
 Instead:
-1. **One-click bootstrap:** the user launches a small CloudFormation stack (`bootstrap/bootstrap.yaml`) in their account. It creates:
-   - a GitHub OIDC identity provider,
-   - a `p2p-deploy` role trusted only by their repo and branches, with scoped permissions,
+1. **One-click bootstrap:** the user launches a small CloudFormation stack (`bootstrap/bootstrap.yaml`) in their account. GitHub/GitLab cannot create their own trust (they have no AWS access until it exists), so this one human click solves the chicken-and-egg problem. It creates:
+   - an OIDC identity provider for `token.actions.githubusercontent.com` **or** the GitLab host (`https://gitlab.com` or a self-managed URL),
+   - a `p2p-deploy` role trusted only by that project and its deploy branches, with scoped permissions,
    - an S3 bucket + DynamoDB table for Terraform state.
+
+   Trust conditions (the security reviewer rejects wildcards that widen these):
+
+   | Provider | `aud` | `sub` (StringLike) |
+   |---|---|---|
+   | GitHub | `sts.amazonaws.com` | `repo:<owner>/<repo>:ref:refs/heads/main` (+ `environment:production` for prod) |
+   | GitLab | `https://gitlab.com` (or self-managed URL) | `project_path:<group>/<project>:ref_type:branch:ref:main` |
+
+   Self-managed GitLab must be reachable from the internet so AWS can fetch its signing keys; a private-only instance is flagged by the analyzer.
 2. **All further IAM is Terraform**, reviewed by the security reviewer and versioned in git.
-3. **No long-lived AWS keys** are ever stored by proto2prod or in GitHub secrets.
-4. **Agents never apply to production.** They open a pull request; production deploys require a human approval in GitHub.
+3. **No long-lived AWS keys** are ever stored by proto2prod or in GitHub/GitLab CI variables.
+4. **Agents never apply to production.** They open a pull/merge request; production deploys require a human approval (GitHub environment protection or a GitLab manual job on a protected environment).
 
 ## 8. Test deploy
 
@@ -163,7 +172,7 @@ proto2prod/
 
 - **Language:** Python 3.12.
 - **Agents:** Claude Agent SDK; each agent runs in its own sandboxed container on its own git branch.
-- **GitHub:** a GitHub App to read the repo and open the pull request.
+- **Source/CI providers:** GitHub (GitHub App, pull request, Actions) and GitLab (GitLab app/token, merge request, GitLab CI). Chosen per project in `contract.yaml` → `ci`.
 - **Infra tooling:** Terraform ≥ 1.8, AWS provider pinned, Checkov, Infracost, gitleaks.
 
 ## 11. Roadmap

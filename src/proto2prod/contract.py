@@ -70,6 +70,12 @@ def check_consistency(profile: dict[str, Any], contract: dict[str, Any]) -> None
     if profile["database"]["engine"] == "postgres" and "DATABASE_URL" not in names:
         raise ContractError("app uses Postgres but contract has no DATABASE_URL entry")
 
+    ci = contract["ci"]
+    if ci["provider"] == "github" and ci["host"] != "https://github.com":
+        raise ContractError("GitHub projects must use host https://github.com")
+    if ci["provider"] == "gitlab" and ci["host"] == "https://github.com":
+        raise ContractError("GitLab projects cannot use host https://github.com")
+
     prod = [e for e in contract["environments"] if e["name"] == "production"]
     if prod and not prod[0]["requires_approval"]:
         raise ContractError("production must require human approval")

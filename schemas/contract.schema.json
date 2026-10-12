@@ -4,28 +4,65 @@
   "title": "proto2prod shared contract",
   "description": "Names and interfaces every agent must use. Written by the analyzer; read-only for workers.",
   "type": "object",
-  "required": ["version", "app", "container", "env", "aws", "environments"],
+  "required": [
+    "version",
+    "app",
+    "container",
+    "env",
+    "aws",
+    "ci",
+    "environments"
+  ],
   "additionalProperties": false,
   "properties": {
-    "version": { "const": 1 },
+    "version": {
+      "const": 1
+    },
     "app": {
       "type": "object",
-      "required": ["name", "port", "health_path"],
+      "required": [
+        "name",
+        "port",
+        "health_path"
+      ],
       "additionalProperties": false,
       "properties": {
-        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,30}$" },
-        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
-        "health_path": { "type": "string", "pattern": "^/" },
-        "readiness_path": { "type": "string", "pattern": "^/" }
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,30}$"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "health_path": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "readiness_path": {
+          "type": "string",
+          "pattern": "^/"
+        }
       }
     },
     "container": {
       "type": "object",
-      "required": ["image_name", "tag_scheme"],
+      "required": [
+        "image_name",
+        "tag_scheme"
+      ],
       "additionalProperties": false,
       "properties": {
-        "image_name": { "type": "string" },
-        "tag_scheme": { "enum": ["git-sha", "semver"] }
+        "image_name": {
+          "type": "string"
+        },
+        "tag_scheme": {
+          "enum": [
+            "git-sha",
+            "semver"
+          ]
+        }
       }
     },
     "env": {
@@ -33,30 +70,102 @@
       "description": "Every environment variable the app reads. Secrets map to AWS Secrets Manager entries.",
       "items": {
         "type": "object",
-        "required": ["name", "secret"],
+        "required": [
+          "name",
+          "secret"
+        ],
         "additionalProperties": false,
         "properties": {
-          "name": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
-          "secret": { "type": "boolean" },
-          "secret_id": { "type": "string" },
-          "default": { "type": "string" },
-          "description": { "type": "string" }
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]*$"
+          },
+          "secret": {
+            "type": "boolean"
+          },
+          "secret_id": {
+            "type": "string"
+          },
+          "default": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
         },
-        "if": { "properties": { "secret": { "const": true } } },
-        "then": { "required": ["secret_id"], "not": { "required": ["default"] } }
+        "if": {
+          "properties": {
+            "secret": {
+              "const": true
+            }
+          }
+        },
+        "then": {
+          "required": [
+            "secret_id"
+          ],
+          "not": {
+            "required": [
+              "default"
+            ]
+          }
+        }
       }
     },
     "aws": {
       "type": "object",
-      "required": ["region", "name_prefix", "tags"],
+      "required": [
+        "region",
+        "name_prefix",
+        "tags"
+      ],
       "additionalProperties": false,
       "properties": {
-        "region": { "type": "string", "pattern": "^[a-z]{2}-[a-z]+-\\d$" },
-        "name_prefix": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,20}$" },
+        "region": {
+          "type": "string",
+          "pattern": "^[a-z]{2}-[a-z]+-\\d$"
+        },
+        "name_prefix": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,20}$"
+        },
         "tags": {
           "type": "object",
-          "required": ["project", "managed-by"],
-          "additionalProperties": { "type": "string" }
+          "required": [
+            "project",
+            "managed-by"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ci": {
+      "type": "object",
+      "description": "Where the code lives and which CI system deploys it. Drives the OIDC trust policy.",
+      "required": [
+        "provider",
+        "project",
+        "host"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "enum": [
+            "github",
+            "gitlab"
+          ]
+        },
+        "project": {
+          "type": "string",
+          "description": "owner/repo (GitHub) or full group/subgroup/project path (GitLab)",
+          "pattern": "^[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)+$"
+        },
+        "host": {
+          "type": "string",
+          "description": "https://github.com, https://gitlab.com, or a self-managed GitLab URL",
+          "pattern": "^https://[^/\\\\s]+$"
         }
       }
     },
@@ -65,12 +174,25 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["name", "branch", "requires_approval"],
+        "required": [
+          "name",
+          "branch",
+          "requires_approval"
+        ],
         "additionalProperties": false,
         "properties": {
-          "name": { "enum": ["staging", "production"] },
-          "branch": { "type": "string" },
-          "requires_approval": { "type": "boolean" }
+          "name": {
+            "enum": [
+              "staging",
+              "production"
+            ]
+          },
+          "branch": {
+            "type": "string"
+          },
+          "requires_approval": {
+            "type": "boolean"
+          }
         }
       }
     }

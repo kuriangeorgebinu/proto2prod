@@ -64,3 +64,15 @@ def test_missing_file_is_reported(run_dir):
     (run_dir / "contract.yaml").unlink()
     with pytest.raises(ContractError, match="not found"):
         load_run_spec(run_dir)
+
+
+def test_github_provider_requires_github_host(run_dir):
+    _edit_contract(run_dir, lambda c: c["ci"].update(provider="github"))  # host is gitlab.com
+    with pytest.raises(ContractError, match="GitHub projects"):
+        load_run_spec(run_dir)
+
+
+def test_ci_project_must_be_a_path(run_dir):
+    _edit_contract(run_dir, lambda c: c["ci"].update(project="notes-app"))
+    with pytest.raises(ContractError, match="contract.yaml is invalid"):
+        load_run_spec(run_dir)

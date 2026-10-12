@@ -22,6 +22,10 @@ aws:
   tags:
     project: notes-app
     managed-by: proto2prod
+ci:
+  provider: gitlab
+  project: acme/notes-app
+  host: https://gitlab.com
 environments:
   - name: staging
     branch: main

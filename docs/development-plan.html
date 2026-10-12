@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>proto2prod – Development plan</title>
+<style>
+:root{
+  --bg:#f7f6f2;--card:#ffffff;--ink:#1d1c1a;--muted:#5f5e5a;--line:#dedcd3;
+  --accent:#0f6e56;--accent-bg:#e1f5ee;--warn:#854f0b;--warn-bg:#faeeda;
+  --purple:#534ab7;--purple-bg:#eeedfe;--gray-bg:#f1efe8;--mono:ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#161614;--card:#201f1d;--ink:#ecebe6;--muted:#a8a69e;--line:#38372f;
+  --accent:#5dcaa5;--accent-bg:#0b3a2e;--warn:#fac775;--warn-bg:#3a2a0c;
+  --purple:#afa9ec;--purple-bg:#2a2650;--gray-bg:#2a2925;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:880px;margin:0 auto;padding:48px 20px 80px}
+h1{font-size:34px;line-height:1.2;margin:0 0 8px;letter-spacing:-.01em}
+h2{font-size:22px;margin:52px 0 12px}
+h3{font-size:17px;margin:0}
+p{margin:0 0 12px}
+.lede{font-size:19px;color:var(--muted);max-width:680px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:28px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.stat b{display:block;font-size:26px;line-height:1.2}
+.stat span{color:var(--muted);font-size:14px}
+.ms{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-top:12px}
+.ms header{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ms .id{font:600 13px var(--mono);color:var(--muted)}
+.ms .when{margin-left:auto;color:var(--muted);font-size:14px}
+.pill{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px}
+.done{background:var(--accent-bg);color:var(--accent)}
+.now{background:var(--warn-bg);color:var(--warn)}
+.next{background:var(--gray-bg);color:var(--muted)}
+.ms ul{margin:10px 0 0;padding-left:18px}
+.ms li{margin:2px 0}
+.ms li.ok::marker{content:"✓  ";color:var(--accent)}
+.exit{margin-top:10px;font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:8px}
+.exit b{color:var(--ink)}
+.bar{height:6px;background:var(--gray-bg);border-radius:3px;margin-top:12px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:15px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:13px;color:var(--muted);font-weight:600;background:var(--gray-bg)}
+tr:last-child td{border-bottom:none}
+code{font-family:var(--mono);font-size:.9em;background:var(--gray-bg);padding:1px 5px;border-radius:4px}
+footer{margin-top:56px;color:var(--muted);font-size:14px;border-top:1px solid var(--line);padding-top:16px}
+@media (max-width:680px){.stats{grid-template-columns:1fr 1fr}.ms .when{margin-left:0;width:100%}table{font-size:14px}}
+</style>
+</head>
+<body>
+<main>
+<div class="eyebrow">proto2prod</div>
+<h1>Development plan</h1>
+<p class="lede">How we get from today's foundation to an MVP that takes the sample app's source code and returns a verified, production-ready pull/merge request with Terraform, CI/CD and OIDC access to AWS.</p>
+
+<div class="stats">
+  <div class="stat"><b>1 / 6</b><span>milestones done</span></div>
+  <div class="stat"><b>14 / 16</b><span>sample-app flaws detected</span></div>
+  <div class="stat"><b>32</b><span>tests passing</span></div>
+  <div class="stat"><b>~10 wks</b><span>estimated to MVP</span></div>
+</div>
+
+<h2>Principle: everything is proven on the sample app</h2>
+<p><code>examples/notes-app</code> is a small Next.js + Postgres prototype with 16 planted production flaws, listed in a scoring key the agents never see. Every milestone ends with a test run against it, so progress is measured, not guessed.</p>
+
+<h2>Milestones</h2>
+<p style="color:var(--muted)">Weeks assume one developer working full-time with AI assistance.</p>
+
+<section class="ms">
+  <header><span class="id">M1</span><h3>Foundation and analyzer</h3><span class="pill done">Done</span><span class="when">Week 0</span></header>
+  <ul>
+    <li class="ok">Design, stack-adapter model (Next.js + generic fallback)</li>
+    <li class="ok">Shared contract schemas and validator</li>
+    <li class="ok">Sample app with 16 planted flaws and scoring key</li>
+    <li class="ok">Analyzer agent: stack detection, flaw scanners, profile + contract</li>
+    <li class="ok">GitHub and GitLab project detection for OIDC trust</li>
+  </ul>
+  <div class="bar"><i style="width:100%"></i></div>
+</section>
+
+<section class="ms">
+  <header><span class="id">M2</span><h3>Infrastructure generation</h3><span class="pill now">Next</span><span class="when">Weeks 1–2</span></header>
+  <ul>
+    <li>Tested Terraform module library: network, ECR, ECS service, RDS, CloudFront, Secrets Manager</li>
+    <li>Architecture agent: picks a tier, writes the decision record, estimates cost with Infracost</li>
+    <li>Terraform agent: composes modules from the contract; pinned providers, S3 remote state</li>
+    <li>Dockerfile generation from the stack adapter</li>
+  </ul>
+  <div class="exit"><b>Done when:</b> the sample app's generated Terraform passes <code>terraform validate</code> and Checkov, and the cost estimate fits its budget.</div>
+</section>
+
+<section class="ms">
+  <header><span class="id">M3</span><h3>CI/CD and OIDC trust</h3><span class="pill next">Planned</span><span class="when">Weeks 3–4</span></header>
+  <ul>
+    <li>One-click bootstrap stack (CloudFormation) for GitHub <em>and</em> GitLab: OIDC provider, scoped deploy role, Terraform state bucket and lock table</li>
+    <li>CI/CD agent: generates <code>.gitlab-ci.yml</code> or GitHub Actions — build, test, scan, plan, deploy staging, gated production</li>
+    <li>Trust-policy checks: exact project and branch, no wildcards</li>
+  </ul>
+  <div class="exit"><b>Done when:</b> the sample app's pipeline, running in a test GitLab project and a test GitHub repo, authenticates to a sandbox AWS account via OIDC and runs <code>terraform plan</code> with no stored keys.</div>
+</section>
+
+<section class="ms">
+  <header><span class="id">M4</span><h3>Orchestration, review and proof</h3><span class="pill next">Planned</span><span class="when">Weeks 4–6</span></header>
+  <ul>
+    <li>Orchestrator: runs workers in parallel on separate branches; integrator merges against the contract</li>
+    <li>Reviewers: security (Checkov, gitleaks, dependency audit), cost, policy; rework loop (max 3 rounds)</li>
+    <li>Test deploy to a throwaway environment, smoke tests, guaranteed teardown</li>
+  </ul>
+  <div class="exit"><b>Done when:</b> one command takes the sample app to a passing throwaway deploy on AWS, with review evidence attached.</div>
+</section>
+
+<section class="ms">
+  <header><span class="id">M5</span><h3>Refactor agent</h3><span class="pill next">Planned</span><span class="when">Weeks 6–8</span></header>
+  <ul>
+    <li>LLM-driven fixes for the Next.js adapter: server-side auth, password hashing, stateless sessions, shared DB client, migrations, health check, validation, dependency upgrades</li>
+    <li>Code reviewer: tests, type-check and lint must pass; no unrelated changes</li>
+  </ul>
+  <div class="exit"><b>Done when:</b> at least 14 of the 16 sample-app flaws are fixed and verified by the reviewers, and the app still works end to end.</div>
+</section>
+
+<section class="ms">
+  <header><span class="id">M6</span><h3>Product and beta</h3><span class="pill next">Planned</span><span class="when">Weeks 8–10</span></header>
+  <ul>
+    <li>GitHub App and GitLab integration: connect a project, open the pull/merge request</li>
+    <li>Web dashboard: start a run, watch agents, see findings, cost and evidence</li>
+    <li>Pricing, sign-up, docs; 5–10 beta users with real prototypes</li>
+  </ul>
+  <div class="exit"><b>Done when:</b> a beta user goes from repo to approved pull/merge request without our help.</div>
+</section>
+
+<p style="color:var(--muted);margin-top:16px"><b style="color:var(--ink)">After the MVP:</b> more stack adapters (FastAPI/Django, Express, Rails), an optional console assistant for the few account-setup tasks AWS has no API for, and more architecture tiers.</p>
+
+<h2>What we need, and when</h2>
+<table>
+  <tr><th>Need</th><th>For</th><th>When</th></tr>
+  <tr><td>Terraform CLI on the dev machine</td><td>Validating generated infra</td><td>M2 (can be installed for you)</td></tr>
+  <tr><td>Docker Desktop running</td><td>Running the sample app and container builds</td><td>M2</td></tr>
+  <tr><td>Sandbox AWS account (with a budget alert)</td><td>OIDC tests and throwaway deploys</td><td>M3</td></tr>
+  <tr><td>Test GitLab project + GitHub repo</td><td>Pipelines and OIDC trust for both providers</td><td>M3</td></tr>
+  <tr><td>Anthropic API key</td><td>Refactor agent and LLM reviews</td><td>M5</td></tr>
+</table>
+
+<h2>MVP success measures</h2>
+<table>
+  <tr><th>Measure</th><th>Target</th></tr>
+  <tr><td>Sample-app flaws detected</td><td>All 16</td></tr>
+  <tr><td>Sample-app flaws fixed and verified</td><td>At least 14 of 16</td></tr>
+  <tr><td>Generated Terraform passes validate + Checkov on first review</td><td>100%</td></tr>
+  <tr><td>Long-lived AWS keys anywhere in the output</td><td>0</td></tr>
+  <tr><td>Source code to verified pull/merge request</td><td>Under 30 minutes</td></tr>
+  <tr><td>Throwaway environments left running after a run</td><td>0</td></tr>
+</table>
+
+<h2>Main risks</h2>
+<table>
+  <tr><th>Risk</th><th>How we handle it</th></tr>
+  <tr><td>AI-written Terraform is unreliable</td><td>Agents only compose our tested modules; validate, Checkov and a real deploy before anyone sees it.</td></tr>
+  <tr><td>Refactors break the app</td><td>Code reviewer runs the app's tests; smoke tests in the throwaway deploy; every change is in one reviewable pull/merge request.</td></tr>
+  <tr><td>Overly broad OIDC trust</td><td>Trust pinned to exact project and branch; security reviewer rejects wildcards.</td></tr>
+  <tr><td>Surprise AWS bills from test deploys</td><td>TTL tags, guaranteed teardown, cleanup job, budget alerts on the sandbox account.</td></tr>
+  <tr><td>Competitors (Opsera VibeShift, Pulumi Neo)</td><td>Differentiate on verification: independent review and proof-by-deploy, in the customer's own account and repo.</td></tr>
+</table>
+
+<footer>proto2prod · Development plan · Updated October 12, 2026 · See also <a href="how-it-works.html" style="color:var(--accent)">How it works</a>.</footer>
+</main>
+</body>
+</html>

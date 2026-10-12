@@ -7,6 +7,7 @@ so a run cannot continue on a broken contract.
 from __future__ import annotations
 
 import re
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -75,6 +76,29 @@ def _build_env(repo: Repo, profile: dict[str, Any], findings: list[Finding], app
     return env
 
 
+REMOTE = re.compile(r"^(?:https://(?:[^@/]+@)?([^/]+)/|git@([^:]+):)(.+?)(?:\.git)?/?$")
+
+
+def detect_ci(repo: Repo) -> dict[str, str] | None:
+    """Infer CI provider + project from the repo's own git remote.
+
+    Only trusts the remote when repo_path is the top of its own git repo;
+    a subfolder of a monorepo (like examples/) must be told explicitly."""
+    if not (repo.root / ".git").exists():
+        return None
+    try:
+        out = subprocess.run(["git", "-C", str(repo.root), "remote", "get-url", "origin"],
+                             capture_output=True, text=True, timeout=10, check=True).stdout.strip()
+    except (subprocess.SubprocessError, OSError):
+        return None
+    m = REMOTE.match(out)
+    if not m:
+        return None
+    host, path = (m.group(1) or m.group(2)), m.group(3)
+    provider = "github" if host == "github.com" else "gitlab"
+    return {"provider": provider, "project": path, "host": f"https://{host}"}
+
+
 def analyze(
     repo_path: Path,
     run_dir: Path,
@@ -82,6 +106,7 @@ def analyze(
     traffic_tier: str = "standard",
     monthly_budget_usd: float = 200,
     region: str = "ca-central-1",
+    ci: dict[str, str] | None = None,
 ) -> RunSpec:
     repo = Repo(repo_path)
     adapter, confidence = select_adapter(repo)
@@ -100,6 +125,12 @@ def analyze(
     if stack["database"].get("migrations") == "none" and stack["database"]["engine"] != "none":
         uncertain.append("No migration history found; a baseline migration must be created from the current schema.")
 
+    ci = ci or detect_ci(repo)
+    if ci is None:
+        ci = {"provider": "github", "project": f"unknown/{app}", "host": "https://github.com"}
+        uncertain.append("Could not determine the GitHub/GitLab project; OIDC trust needs the real "
+                         "project path before the bootstrap can be generated.")
+
     profile: dict[str, Any] = {
         "version": 1,
         **stack,
@@ -117,6 +148,7 @@ def analyze(
         "env": _build_env(repo, profile, findings, app),
         "aws": {"region": region, "name_prefix": _slug(app, 20),
                 "tags": {"project": app, "managed-by": "proto2prod"}},
+        "ci": ci,
         "environments": [
             {"name": "staging", "branch": "main", "requires_approval": False},
             {"name": "production", "branch": "main", "requires_approval": True},

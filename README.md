@@ -20,7 +20,11 @@ Every piece of work is checked by independent reviewer agents and proven with a 
 4. **Prove** – the result is deployed to a throwaway AWS environment, smoke-tested, then torn down.
 5. **Approve** – you get one pull request with the plan, the cost estimate and the evidence.
 
-See [docs/DESIGN.md](docs/DESIGN.md) for the full design.
+Works with **GitHub or GitLab**; the CI/CD pipeline reaches your AWS account through **OIDC**, so no AWS keys are ever stored.
+
+- [How it works](docs/how-it-works.html) – the end-to-end journey in one page
+- [Development plan](docs/development-plan.html) – milestones to the MVP
+- [Full design](docs/DESIGN.md)
 
 ## Status
 

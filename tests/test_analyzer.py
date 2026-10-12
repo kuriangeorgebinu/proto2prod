@@ -71,3 +71,37 @@ def test_unknown_stack_falls_back_to_generic(tmp_path):
     assert spec.contract["app"]["port"] == 8000
     assert spec.secret_names() == ["API_TOKEN"]
     assert any("only infra" in u for u in spec.profile["uncertain"])
+
+
+def _git_repo_with_remote(path, url):
+    import subprocess
+    path.mkdir()
+    (path / "package.json").write_text('{"name": "shop", "dependencies": {"next": "15.3.1"}}')
+    subprocess.run(["git", "init", "-q", str(path)], check=True)
+    subprocess.run(["git", "-C", str(path), "remote", "add", "origin", url], check=True)
+    return path
+
+
+@pytest.mark.parametrize("url, expected", [
+    ("https://gitlab.com/acme/platform/shop.git",
+     {"provider": "gitlab", "project": "acme/platform/shop", "host": "https://gitlab.com"}),
+    ("git@gitlab.internal.acme.io:team/shop.git",
+     {"provider": "gitlab", "project": "team/shop", "host": "https://gitlab.internal.acme.io"}),
+    ("https://github.com/acme/shop",
+     {"provider": "github", "project": "acme/shop", "host": "https://github.com"}),
+])
+def test_detects_ci_provider_from_git_remote(tmp_path, url, expected):
+    spec = analyze(_git_repo_with_remote(tmp_path / "app", url), tmp_path / "run")
+    assert spec.contract["ci"] == expected
+
+
+def test_explicit_ci_overrides_detection(spec, tmp_path):
+    ci = {"provider": "gitlab", "project": "acme/notes-app", "host": "https://gitlab.com"}
+    s = analyze(NOTES_APP, tmp_path / "run", ci=ci)
+    assert s.contract["ci"] == ci
+
+
+def test_unknown_project_is_flagged(spec):
+    # examples/notes-app is a subfolder, so it must not inherit proto2prod's own remote.
+    assert spec.contract["ci"]["project"] == "unknown/notes-app"
+    assert any("OIDC trust" in u for u in spec.profile["uncertain"])
