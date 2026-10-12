@@ -1,0 +1,31 @@
+version: 1
+app:
+  name: notes-app
+  port: 3000
+  health_path: /api/health
+container:
+  image_name: notes-app
+  tag_scheme: git-sha
+env:
+  - name: DATABASE_URL
+    secret: true
+    secret_id: notes-app/database-url
+  - name: NEXTAUTH_SECRET
+    secret: true
+    secret_id: notes-app/nextauth-secret
+  - name: NODE_ENV
+    secret: false
+    default: production
+aws:
+  region: ca-central-1
+  name_prefix: notes
+  tags:
+    project: notes-app
+    managed-by: proto2prod
+environments:
+  - name: staging
+    branch: main
+    requires_approval: false
+  - name: production
+    branch: main
+    requires_approval: true

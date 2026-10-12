@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kuriangeorgebinu/proto2prod/schemas/contract.schema.json",
+  "title": "proto2prod shared contract",
+  "description": "Names and interfaces every agent must use. Written by the analyzer; read-only for workers.",
+  "type": "object",
+  "required": ["version", "app", "container", "env", "aws", "environments"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "app": {
+      "type": "object",
+      "required": ["name", "port", "health_path"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,30}$" },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "health_path": { "type": "string", "pattern": "^/" },
+        "readiness_path": { "type": "string", "pattern": "^/" }
+      }
+    },
+    "container": {
+      "type": "object",
+      "required": ["image_name", "tag_scheme"],
+      "additionalProperties": false,
+      "properties": {
+        "image_name": { "type": "string" },
+        "tag_scheme": { "enum": ["git-sha", "semver"] }
+      }
+    },
+    "env": {
+      "type": "array",
+      "description": "Every environment variable the app reads. Secrets map to AWS Secrets Manager entries.",
+      "items": {
+        "type": "object",
+        "required": ["name", "secret"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+          "secret": { "type": "boolean" },
+          "secret_id": { "type": "string" },
+          "default": { "type": "string" },
+          "description": { "type": "string" }
+        },
+        "if": { "properties": { "secret": { "const": true } } },
+        "then": { "required": ["secret_id"], "not": { "required": ["default"] } }
+      }
+    },
+    "aws": {
+      "type": "object",
+      "required": ["region", "name_prefix", "tags"],
+      "additionalProperties": false,
+      "properties": {
+        "region": { "type": "string", "pattern": "^[a-z]{2}-[a-z]+-\\d$" },
+        "name_prefix": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,20}$" },
+        "tags": {
+          "type": "object",
+          "required": ["project", "managed-by"],
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "environments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "branch", "requires_approval"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "enum": ["staging", "production"] },
+          "branch": { "type": "string" },
+          "requires_approval": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

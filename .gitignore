@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+dist/
+build/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!example.tfvars
+crash.log
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# Agent run output
+runs/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

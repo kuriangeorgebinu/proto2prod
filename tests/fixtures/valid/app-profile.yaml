@@ -1,0 +1,33 @@
+version: 1
+framework:
+  name: nextjs
+  version: "15.2"
+  router: app
+runtime:
+  language: typescript
+  node_version: "20"
+  package_manager: npm
+build:
+  install: npm ci
+  build: npm run build
+  start: npm start
+  test: npm test
+services:
+  - name: web
+    kind: web
+database:
+  engine: postgres
+  version: "16"
+  orm: prisma
+  migrations: prisma-migrate
+  row_level_security: not-applicable
+external_services: []
+findings:
+  - id: hardcoded-secret
+    severity: critical
+    summary: NEXTAUTH_SECRET is hard-coded in auth config
+    file: src/lib/auth.ts
+    line: 12
+uncertain: []
+traffic_tier: standard
+monthly_budget_usd: 200
