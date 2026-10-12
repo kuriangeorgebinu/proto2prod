@@ -1,5 +1,12 @@
 # proto2prod – Design
 
+proto2prod has two products that share one engine (analysis, Terraform generation, OIDC trust, merge requests, independent review):
+
+- **Launch** (§1–11): turns a prototype's source code into a verified, production-ready AWS deployment. One-off, per app.
+- **Cost Guardian** (§12): watches the AWS account after launch, catches cost spikes within minutes, and fixes waste through Terraform merge requests. Always on, recurring revenue.
+
+Launch gets an app into AWS correctly; Guardian keeps it cost-efficient. A coding assistant run on demand can't do the second part: it has to be always on, remember each account's history, and act on live infrastructure.
+
 ## 1. Problem
 
 AI app builders (Lovable, Bolt, Replit, Claude Code) produce working prototypes fast, but the step to production is where they fail:
@@ -182,3 +189,58 @@ proto2prod/
 3. **M3 – Verification:** security/cost/policy reviewers, rework loop, test deploy.
 4. **M4 – Refactor agent** and code reviewer.
 5. **M5 – Product:** GitHub App, web dashboard, bootstrap stack, pricing.
+6. **G1 – Guardian daily loop:** waste rules, savings estimates, fix merge requests (see §12).
+7. **G2 – Guardian fast loop:** change and spike alerts within minutes.
+8. **G3 – Guardian product:** savings verification, billing, dashboard.
+
+## 12. Cost Guardian
+
+### 12.1 Problem and buyer
+
+Small teams spending roughly $2k–$50k/month on AWS rarely have someone watching the bill. Waste accumulates quietly (idle instances, oversized databases, forgotten snapshots, NAT gateway data charges) and mistakes are discovered at month end. Existing cost tools mostly *report* waste or manage savings commitments for larger companies; Guardian *fixes* it in the customer's own Terraform.
+
+### 12.2 Why two loops
+
+AWS billing data is not real time: Cost Explorer refreshes at least once a day and a day's costs can take about two days to finalise; billing exports (CUR 2.0) refresh at least daily. A bill-only watcher learns about a mistake a day or two late. Guardian therefore runs two loops:
+
+| Loop | Cadence | Inputs | Purpose |
+|---|---|---|---|
+| **Fast** | Minutes | CloudTrail management events via EventBridge; CloudWatch metrics (NAT bytes, ASG size, Lambda/API request rates, data transfer) | Catch risky changes and spikes; estimate cost from list prices; alert and propose a fix |
+| **Daily** | Once a day | Cost Explorer API; Data Exports (CUR 2.0) in the customer's S3 | Exact spend, slow waste, trends and forecasts; verify savings of past fixes |
+
+The fast loop is approximate but quick ("a `p4d.24xlarge` started in us-east-1, ≈$32/h, not in Terraform"). The daily loop is exact and is the source of truth for verified savings and billing.
+
+### 12.3 Access
+
+Same bootstrap stack as Launch (§7), with an extra Guardian option:
+- **Read role** for the Guardian service: Cost Explorer, CloudWatch, resource describe/list, read on the billing export bucket. No write permissions.
+- **EventBridge rule** in the customer account forwarding selected CloudTrail events (resource create/modify, scaling changes) to Guardian's event bus.
+- **No direct write access.** Every fix is a Terraform merge request that the customer's own pipeline applies through its OIDC deploy role.
+
+### 12.4 Fix flow
+
+1. A rule finds waste or a spike → a **finding** with evidence and estimated monthly saving.
+2. The fix agent edits the customer's Terraform (resize, schedule non-prod, lifecycle policy, remove unused resource) and opens a merge request.
+3. The reviewer agents check it (security, policy, blast radius) before the customer sees it.
+4. Customers can enable **auto-merge per rule type** for low-risk fixes (e.g. S3 lifecycle rules, scheduling non-prod). Deletions and production resizing always need a human.
+5. Resources created outside Terraform ("ClickOps") cannot be fixed by merge request; Guardian alerts and offers a Terraform import instead.
+6. The daily loop measures actual spend before/after and records **verified savings** per fix.
+
+### 12.5 Initial rule set (daily loop)
+
+Idle EC2/RDS (low CPU and connections for 14 days) · oversized instances · unattached EBS volumes and old snapshots · idle load balancers and unused Elastic IPs · NAT gateway traffic that a VPC endpoint would avoid · S3 buckets without lifecycle rules · CloudWatch log groups with no retention · previous-generation instance types · savings plan / reserved-capacity coverage gaps.
+
+### 12.6 Pricing
+
+A share of **verified** savings (≈20–30%), with a small monthly minimum. Customers only pay for savings the daily loop has measured.
+
+### 12.7 Code layout
+
+```
+src/proto2prod/guardian/
+├── rules/          waste and spike rules (same Finding model as scanners.py)
+├── daily.py        Cost Explorer + Data Exports ingestion, rule run, savings verification
+├── fast.py         EventBridge event handler, list-price estimator, alerts
+├── pricing.py      AWS Price List API lookups with caching
+└── fixes.py        Terraform edits + merge request via the shared delivery layer
+```

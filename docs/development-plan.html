@@ -56,13 +56,13 @@ footer{margin-top:56px;color:var(--muted);font-size:14px;border-top:1px solid va
 <main>
 <div class="eyebrow">proto2prod</div>
 <h1>Development plan</h1>
-<p class="lede">How we get from today's foundation to an MVP that takes the sample app's source code and returns a verified, production-ready pull/merge request with Terraform, CI/CD and OIDC access to AWS.</p>
+<p class="lede">How we get from today's foundation to two products on one engine: <b>Launch</b>, which turns the sample app's source code into a verified, production-ready pull/merge request with Terraform, CI/CD and OIDC access to AWS; and <b>Cost Guardian</b>, which keeps the AWS bill in check after launch.</p>
 
 <div class="stats">
-  <div class="stat"><b>1 / 6</b><span>milestones done</span></div>
+  <div class="stat"><b>1 / 9</b><span>milestones done</span></div>
   <div class="stat"><b>14 / 16</b><span>sample-app flaws detected</span></div>
-  <div class="stat"><b>32</b><span>tests passing</span></div>
-  <div class="stat"><b>~10 wks</b><span>estimated to MVP</span></div>
+  <div class="stat"><b>~10 wks</b><span>to Launch MVP</span></div>
+  <div class="stat"><b>~16 wks</b><span>to Launch + Guardian</span></div>
 </div>
 
 <h2>Principle: everything is proven on the sample app</h2>
@@ -133,7 +133,41 @@ footer{margin-top:56px;color:var(--muted);font-size:14px;border-top:1px solid va
   <div class="exit"><b>Done when:</b> a beta user goes from repo to approved pull/merge request without our help.</div>
 </section>
 
-<p style="color:var(--muted);margin-top:16px"><b style="color:var(--ink)">After the MVP:</b> more stack adapters (FastAPI/Django, Express, Rails), an optional console assistant for the few account-setup tasks AWS has no API for, and more architecture tiers.</p>
+<h2>Cost Guardian track</h2>
+<p style="color:var(--muted)">Guardian reuses the OIDC bootstrap and merge-request delivery from M3, so it can start any time after M3. Shown here after the Launch MVP; it can be pulled earlier if it proves the stronger business.</p>
+
+<section class="ms">
+  <header><span class="id">G1</span><h3>Daily loop and waste fixes</h3><span class="pill next">Planned</span><span class="when">Weeks 10–12</span></header>
+  <ul>
+    <li>Read-only Guardian role and billing-export setup added to the bootstrap stack</li>
+    <li>Cost Explorer and Data Exports ingestion; price lookups from the AWS Price List API</li>
+    <li>First waste rules: idle and oversized instances, unattached volumes, old snapshots, NAT traffic, S3 lifecycle, log retention</li>
+    <li>Fix agent opens Terraform pull/merge requests; reviewers check them</li>
+  </ul>
+  <div class="exit"><b>Done when:</b> on a sandbox account seeded with known waste, Guardian finds all of it and opens correct fixes that the pipeline applies.</div>
+</section>
+
+<section class="ms">
+  <header><span class="id">G2</span><h3>Fast loop: alerts in minutes</h3><span class="pill next">Planned</span><span class="when">Weeks 12–14</span></header>
+  <ul>
+    <li>EventBridge forwarding of resource-change events from the customer account</li>
+    <li>Spike detection on CloudWatch metrics; cost-per-hour estimates from list prices</li>
+    <li>Alerts to email/Slack with a one-click fix request; ClickOps resources flagged with an import offer</li>
+  </ul>
+  <div class="exit"><b>Done when:</b> launching an expensive instance in the sandbox produces an alert with a cost estimate in under 5 minutes.</div>
+</section>
+
+<section class="ms">
+  <header><span class="id">G3</span><h3>Verified savings and billing</h3><span class="pill next">Planned</span><span class="when">Weeks 14–16</span></header>
+  <ul>
+    <li>Before/after spend per fix from the daily loop; verified-savings ledger</li>
+    <li>Auto-merge settings per rule type; deletions and production always need approval</li>
+    <li>Savings-share billing and a Guardian view in the dashboard</li>
+  </ul>
+  <div class="exit"><b>Done when:</b> a beta customer receives an invoice calculated only from savings the daily loop has measured.</div>
+</section>
+
+<p style="color:var(--muted);margin-top:16px"><b style="color:var(--ink)">Later:</b> more stack adapters (FastAPI/Django, Express, Rails), an optional console assistant for the few account-setup tasks AWS has no API for, and more architecture tiers.</p>
 
 <h2>What we need, and when</h2>
 <table>
@@ -143,6 +177,7 @@ footer{margin-top:56px;color:var(--muted);font-size:14px;border-top:1px solid va
   <tr><td>Sandbox AWS account (with a budget alert)</td><td>OIDC tests and throwaway deploys</td><td>M3</td></tr>
   <tr><td>Test GitLab project + GitHub repo</td><td>Pipelines and OIDC trust for both providers</td><td>M3</td></tr>
   <tr><td>Anthropic API key</td><td>Refactor agent and LLM reviews</td><td>M5</td></tr>
+  <tr><td>Cost Explorer and a billing export enabled on the sandbox account</td><td>Guardian daily loop</td><td>G1</td></tr>
 </table>
 
 <h2>MVP success measures</h2>
@@ -154,6 +189,8 @@ footer{margin-top:56px;color:var(--muted);font-size:14px;border-top:1px solid va
   <tr><td>Long-lived AWS keys anywhere in the output</td><td>0</td></tr>
   <tr><td>Source code to verified pull/merge request</td><td>Under 30 minutes</td></tr>
   <tr><td>Throwaway environments left running after a run</td><td>0</td></tr>
+  <tr><td>Guardian: seeded waste found in the sandbox</td><td>100%</td></tr>
+  <tr><td>Guardian: alert after an expensive resource is created</td><td>Under 5 minutes</td></tr>
 </table>
 
 <h2>Main risks</h2>
@@ -164,6 +201,8 @@ footer{margin-top:56px;color:var(--muted);font-size:14px;border-top:1px solid va
   <tr><td>Overly broad OIDC trust</td><td>Trust pinned to exact project and branch; security reviewer rejects wildcards.</td></tr>
   <tr><td>Surprise AWS bills from test deploys</td><td>TTL tags, guaranteed teardown, cleanup job, budget alerts on the sandbox account.</td></tr>
   <tr><td>Competitors (Opsera VibeShift, Pulumi Neo)</td><td>Differentiate on verification: independent review and proof-by-deploy, in the customer's own account and repo.</td></tr>
+  <tr><td>Cost-tool competitors (Vantage, CloudZero, nOps, ProsperOps)</td><td>Target small teams they don't chase; fix waste in the customer's own Terraform instead of only reporting it; charge only for measured savings.</td></tr>
+  <tr><td>A Guardian fix causes an outage</td><td>Read-only access; every fix is a reviewed pull/merge request; deletions and production changes always need a human.</td></tr>
 </table>
 
 <footer>proto2prod · Development plan · Updated October 12, 2026 · See also <a href="how-it-works.html" style="color:var(--accent)">How it works</a>.</footer>

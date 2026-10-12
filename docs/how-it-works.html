@@ -78,7 +78,7 @@ footer{margin-top:56px;color:var(--muted);font-size:14px;border-top:1px solid va
 
 <div class="eyebrow">proto2prod</div>
 <h1>From prototype to production on AWS, verified</h1>
-<p class="lede">Point proto2prod at your app's source code. A team of AI agents turns it into a production-ready app with Terraform, a CI/CD pipeline and secure OIDC access to your AWS account, delivered as one pull or merge request.</p>
+<p class="lede">Point proto2prod at your app's source code. A team of AI agents turns it into a production-ready app with Terraform, a CI/CD pipeline and secure OIDC access to your AWS account, delivered as one pull or merge request. After launch, Cost Guardian keeps the AWS bill in check.</p>
 
 <div class="io">
   <div class="card">
@@ -170,6 +170,20 @@ docs/ARCHITECTURE.md</code></pre>
   <div class="side"><b style="font-size:14px">Supporting:</b> <span>Secrets Manager</span><span>ECR image registry</span><span>CloudWatch logs + alarms</span><span>Private VPC subnets</span><span>Terraform state in S3</span></div>
 </div>
 
+<h2>After launch: Cost Guardian keeps it efficient</h2>
+<p>Once the app is live, Cost Guardian watches the AWS account around the clock using the same OIDC trust, read-only. AWS publishes billing data only about once a day, so Guardian runs two loops:</p>
+<div class="grid2">
+  <div class="card">
+    <h3>Fast loop <span class="tag ci">Minutes</span></h3>
+    <p style="color:var(--muted);margin:6px 0 0">Watches resource changes and usage metrics. If someone starts an expensive instance, a NAT gateway starts moving terabytes, or autoscaling runs away, you hear about it within minutes, with an estimated cost per hour.</p>
+  </div>
+  <div class="card">
+    <h3>Daily loop <span class="tag agent">Once a day</span></h3>
+    <p style="color:var(--muted);margin:6px 0 0">Reads the actual bill. Finds slow waste: idle or oversized resources, old snapshots, missing lifecycle rules, savings-plan gaps. Measures what each past fix really saved.</p>
+  </div>
+</div>
+<p style="margin-top:14px">Every fix is a Terraform pull/merge request, checked by the reviewer agents and applied by your own pipeline. Guardian never changes your account directly. You can let low-risk fixes merge automatically; deletions and production changes always wait for you. Pricing is a share of the savings Guardian has actually measured.</p>
+
 <h2>Guarantees</h2>
 <ul class="checks">
   <li><b>No AWS console automation</b><span>Every AWS change is Terraform you can read.</span></li>
@@ -178,6 +192,8 @@ docs/ARCHITECTURE.md</code></pre>
   <li><b>Checked by someone else</b><span>Reviewers never grade their own work.</span></li>
   <li><b>Proven before you see it</b><span>A real throwaway deploy must pass first.</span></li>
   <li><b>Any app</b><span>Deep fixes for supported stacks; infra and CI/CD for any containerizable app.</span></li>
+  <li><b>Read-only monitoring</b><span>Guardian watches with read access; changes go through your pipeline.</span></li>
+  <li><b>Pay for results</b><span>Guardian is priced on savings it has measured, not promised.</span></li>
 </ul>
 
 <footer>proto2prod · How it works · See also <a href="development-plan.html" style="color:var(--accent)">Development plan</a> and <a href="DESIGN.md" style="color:var(--accent)">full design</a>.</footer>

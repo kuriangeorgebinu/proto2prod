@@ -1,6 +1,13 @@
 # proto2prod
 
-**Turn a prototype web app into a production-ready AWS deployment.**
+**Turn a prototype web app into a production-ready AWS deployment, then keep its AWS bill in check.**
+
+Two products on one engine:
+
+- **Launch** – source code in, verified production-ready pull/merge request out (described below).
+- **Cost Guardian** – always-on: alerts on cost spikes within minutes, finds waste daily, and fixes it through Terraform pull/merge requests. Priced on measured savings. See [DESIGN.md §12](docs/DESIGN.md#12-cost-guardian).
+
+## Launch
 
 proto2prod is a team of AI agents that reads your app's source code and delivers, as a pull request:
 
